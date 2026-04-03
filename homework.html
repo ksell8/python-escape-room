@@ -1,0 +1,509 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <link rel="icon" href="/favicon.ico" type="image/x-icon">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Python Escape Room,Generators &amp; Async</title>
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;1,400&family=JetBrains+Mono:wght@400;600&family=Lato:wght@300;400&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg:     #0a0a0a;
+      --bg2:    #111111;
+      --bg3:    #0d0d0d;
+      --border: #222222;
+      --green:  #00ff41;
+      --red:    #ff3333;
+      --yellow: #ffcc00;
+      --orange: #ff8800;
+      --fg:     #cccccc;
+      --fg2:    #888888;
+      --white:  #ffffff;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      background: var(--bg);
+      color: var(--fg);
+      font-family: 'Lato', sans-serif;
+      font-weight: 300;
+      line-height: 1.8;
+      padding: 60px 20px;
+    }
+
+    .page { max-width: 720px; margin: 0 auto; }
+
+    /* ── Header ── */
+    header.header {
+      border-top: 3px solid var(--green);
+      border-bottom: 1px solid var(--border);
+      padding: 32px 0 24px;
+      margin-bottom: 56px;
+      position: relative;
+    }
+
+    header.header::after {
+      content: '';
+      display: block;
+      height: 3px;
+      background: var(--green);
+      margin-top: 24px;
+      width: 60px;
+    }
+
+    .label {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 11px;
+      letter-spacing: 0.2em;
+      text-transform: uppercase;
+      color: var(--green);
+      margin-bottom: 12px;
+    }
+
+    h1 {
+      font-family: 'Playfair Display', serif;
+      font-size: clamp(32px, 6vw, 52px);
+      font-weight: 700;
+      line-height: 1.1;
+      letter-spacing: -0.02em;
+      color: var(--white);
+    }
+
+    .subtitle {
+      font-family: 'Playfair Display', serif;
+      font-style: italic;
+      font-size: 18px;
+      color: var(--fg2);
+      margin-top: 8px;
+    }
+
+    /* ── Sections ── */
+    section { margin-bottom: 52px; }
+
+    h2 {
+      font-family: 'Playfair Display', serif;
+      font-size: 22px;
+      font-weight: 700;
+      color: var(--white);
+      margin-bottom: 16px;
+      padding-bottom: 8px;
+      border-bottom: 1px solid var(--border);
+    }
+
+    h2 .num {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 12px;
+      color: var(--green);
+      display: block;
+      margin-bottom: 4px;
+      letter-spacing: 0.15em;
+    }
+
+    p { margin-bottom: 16px; font-size: 16px; line-height: 1.85; color: var(--fg); }
+
+    strong { color: var(--white); font-weight: 400; }
+    em     { color: var(--yellow); font-style: italic; }
+
+    code {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 13px;
+      background: var(--bg2);
+      color: var(--green);
+      padding: 1px 6px;
+      border: 1px solid var(--border);
+    }
+
+    /* ── Callout ── */
+    .callout {
+      background: var(--bg2);
+      padding: 24px 28px;
+      margin: 28px 0;
+      border-left: 4px solid var(--green);
+    }
+
+    .callout .callout-label {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 10px;
+      letter-spacing: 0.2em;
+      text-transform: uppercase;
+      color: var(--yellow);
+      margin-bottom: 10px;
+    }
+
+    .callout p { color: var(--fg); font-size: 15px; margin-bottom: 0; }
+
+    /* ── Code blocks ── */
+    pre {
+      background: var(--bg3);
+      color: var(--fg);
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 13px;
+      line-height: 1.7;
+      padding: 24px 28px;
+      overflow-x: auto;
+      margin: 20px 0;
+      border-left: 3px solid var(--green);
+    }
+
+    .kw      { color: #c792ea; }
+    .cls     { color: #82aaff; }
+    .str     { color: #c3e88d; }
+    .cmt     { color: #666666; font-style: italic; }
+    .fn      { color: #82aaff; }
+    .num-lit { color: #f78c6c; }
+
+    /* ── Two-column code comparison ── */
+    .two-col {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 16px;
+      margin: 20px 0;
+    }
+
+    .two-col pre { margin: 0; font-size: 12px; }
+
+    .col-label {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 10px;
+      letter-spacing: 0.15em;
+      text-transform: uppercase;
+      margin-bottom: 6px;
+    }
+
+    .col-label.bad  { color: var(--red); }
+    .col-label.good { color: var(--green); }
+
+    /* ── Room tag ── */
+    .room-tag {
+      display: inline-block;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 10px;
+      letter-spacing: 0.15em;
+      text-transform: uppercase;
+      border: 1px solid var(--yellow);
+      color: var(--yellow);
+      padding: 2px 8px;
+      margin-bottom: 12px;
+    }
+
+    /* ── Task box ── */
+    .task {
+      border: 2px solid var(--green);
+      padding: 32px;
+      margin: 28px 0;
+      position: relative;
+    }
+
+    .task::before {
+      content: 'YOUR TURN';
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 10px;
+      letter-spacing: 0.2em;
+      background: var(--green);
+      color: var(--bg);
+      padding: 4px 10px;
+      position: absolute;
+      top: -14px;
+      left: 24px;
+    }
+
+    .task h3 {
+      font-family: 'Playfair Display', serif;
+      font-size: 18px;
+      color: var(--white);
+      margin-bottom: 12px;
+    }
+
+    ol { padding-left: 24px; font-size: 15px; line-height: 2; color: var(--fg); }
+    ol li { margin-bottom: 6px; }
+
+    ul { padding-left: 24px; font-size: 15px; line-height: 2; margin-bottom: 16px; }
+    ul li { margin-bottom: 4px; }
+
+    /* ── Footer ── */
+    footer.footer {
+      border-top: 1px solid var(--border);
+      padding-top: 24px;
+      margin-top: 72px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 11px;
+      color: var(--fg2);
+      letter-spacing: 0.1em;
+    }
+
+    .dot {
+      display: inline-block;
+      width: 6px;
+      height: 6px;
+      background: var(--green);
+      border-radius: 50%;
+      margin: 0 8px;
+      vertical-align: middle;
+    }
+
+    .cta-btn {
+      display: inline-block;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 15px;
+      font-weight: 600;
+      letter-spacing: 0.08em;
+      color: var(--bg);
+      background: var(--green);
+      padding: 20px 40px;
+      text-decoration: none;
+      cursor: pointer;
+      transition: background 0.15s ease, color 0.15s ease;
+    }
+
+    .cta-btn:hover {
+      background: var(--white);
+      color: var(--bg);
+    }
+
+    .cta-arrow {
+      display: inline-block;
+      margin-left: 12px;
+      transition: transform 0.15s ease;
+    }
+
+    .cta-btn:hover .cta-arrow { transform: translateX(4px); }
+
+    @media (max-width: 520px) {
+      .two-col { grid-template-columns: 1fr; }
+      .cta-btn { font-size: 13px; padding: 16px 24px; }
+    }
+  </style>
+</head>
+<body>
+<div class="page">
+
+  <header class="header">
+    <div class="label">Python Assignment</div>
+    <h1>The Escape Room</h1>
+    <div class="subtitle">Generators, async/await, and the frameworks that use them</div>
+  </header>
+
+  <main>
+
+  <!-- ── 01 Generators ─────────────────────────────────────────────────────── -->
+  <section>
+    <h2><span class="num">01 —</span> Generators &amp; yield</h2>
+    <div class="room-tag">Room 1,The Memory Vault</div>
+    <div class="callout">
+      <div class="callout-label">Review</div>
+      <p>A <code>list</code> holds data.  We can iterate through a list with a <code>for</code> loop.</p>
+<pre><span class="kw">fruits</span> = [<span class="str">"manzana"</span>, <span class="str">"plátano"</span>, <span class="str">"fresa"</span>]
+
+<span class="kw">for</span> fruit <span class="kw">in</span> fruits:
+    <span class="fn">print</span>(fruit)
+
+<span class="cmt"># manzana</span>
+<span class="cmt"># plátano</span>
+<span class="cmt"># fresa</span></pre>
+    </div>
+    <p>When python uses a list as above, it has to hold every value in memory at once. For small lists that's fine. But as you add more and more to the list this becomes impractical and you can wind up with an out of memory (OOM) error.</p>
+    <p>A <strong>generator</strong> is a function that wraps around a list and uses <code>yield</code> to pass values one-by-one. It hands back one value at a time, pauses, and resumes when the caller asks for the next one. The whole list doesn't have to exist in memory, just one value at a time.</p>
+
+    <p>¡Imagínate! <code>frutas.txt</code> is a file with 5 million fruit names, one per line. We can load the whole file at once,but this would be <em>grosero</em> as it would take up a whole bunch of space. Or we can iterate through the file one line at a time, and do whatever we need to do with each line of fruit.</p>
+<pre><span class="cmt"># frutas.txt</span>
+manzana
+plátano
+fresa
+mango
+sandía
+<span class="cmt">... 4,999,995 more lines ...</span></pre>
+
+    <div class="two-col">
+      <div>
+        <div class="col-label bad">Grosero,~150 MB</div>
+<pre><span class="kw">def</span> <span class="fn">get_frutas</span>():
+    <span class="cmt"># reads every line into memory at once</span>
+    <span class="kw">return</span> <span class="fn">open</span>(<span class="str">"frutas.txt"</span>).<span class="fn">readlines</span>()
+
+<span class="kw">for</span> fruta <span class="kw">in</span> <span class="fn">get_frutas</span>():
+    <span class="fn">print</span>(fruta)</pre>
+      </div>
+      <div>
+        <div class="col-label good">Perezoso,&lt; 1 MB</div>
+<pre><span class="kw">def</span> <span class="fn">get_frutas</span>():
+    <span class="cmt"># hands back one line at a time</span>
+    <span class="kw">for</span> fruta <span class="kw">in</span> <span class="fn">open</span>(<span class="str">"frutas.txt"</span>):
+        <span class="kw">yield</span> fruta.<span class="fn">strip</span>()
+
+<span class="kw">for</span> fruta <span class="kw">in</span> <span class="fn">get_frutas</span>():
+    <span class="fn">print</span>(fruta)</pre>
+      </div>
+    </div>
+
+    <div class="callout">
+      <div class="callout-label">The key insight</div>
+      <p><code>yield</code> turns a function into a generator. The calling code looks identical, a <code>for</code> loop works on both. The difference is entirely inside the function: one builds everything upfront, the other produces values on demand. This is why generators are called <strong>lazy evaluators</strong>, they do the minimum amount of work necessary, only when asked.</p>
+    </div>
+
+    <div class="callout" style="border-left-color: var(--yellow);">
+      <div class="callout-label">Pregunta</div>
+      <p>Remember, <code>return</code> sends a value back from a function to whatever called it, and the function is done. ¿Cuál es la diferencia entre <code>return</code> y <code>yield</code> a ti?</p>
+    </div>
+
+    <div class="callout" style="border-left-color: var(--fg2);">
+      <div class="callout-label" style="color: var(--fg2);">Things you don't need to know</div>
+      <p>Technically, a generator function does <em>return</em> an object when called. This special type of object is called a <strong>generator</strong>, and it has a method called <code>next()</code> that lets you step through it one value at a time. You can see this yourself by opening a Python shell and running the following:</p>
+<pre>&gt;&gt;&gt; <span class="kw">def</span> <span class="fn">func</span>():
+...     <span class="kw">for</span> x <span class="kw">in</span> <span class="fn">range</span>(<span class="num-lit">100</span>):
+...         <span class="kw">yield</span> x
+...
+&gt;&gt;&gt; fun = <span class="fn">func</span>()
+&gt;&gt;&gt; <span class="fn">next</span>(fun)
+&gt;&gt;&gt; <span class="fn">next</span>(fun)</pre>
+      <p>When you write <code>for x in func()</code>, Python is calling <code>next()</code> behind the scenes on every iteration.</p>
+    </div>
+
+    <div class="callout" style="border-left-color: var(--orange);">
+      <div class="callout-label" style="color: var(--orange);">Fun language fact</div>
+      <p>As you know, <em>Yield</em>  has two meanings in inglés: <strong>1)</strong> to produce a result, and <strong>2)</strong> to give way. <code>yield</code> in Python does both. It produces whatever value you ask it for, and then gives control back to the calling function — waiting patiently until it's asked for the next one.</p>
+    </div>
+  </section>
+
+  <!-- ── 02 Async/Await ─────────────────────────────────────────────────────── -->
+  <section>
+    <h2><span class="num">02 —</span> async / await / gather</h2>
+    <div class="room-tag">Room 2,The Waiting Room</div>
+    <p>When a function talks to something, whether it be fetching a URL, waiting for a database, or running an operation on another machine it spends most of its time sitting idle. Shooting off a task and waiting for the response is called synchronous execution.  Shooting off a task and not waiting for the response to get back to you and working on other shit is called asynchronous execution.</p>
+    <p><strong>Async functions</strong> (marked <code>async def</code>) can be <em>awaited</em>. When they hit an <code>await</code>, they pause and let other tasks run. <code>asyncio.gather()</code> launches multiple coroutines at the same time and waits for all of them to finish.</p>
+
+    <div class="callout" style="border-left-color: var(--orange);">
+      <div class="callout-label" style="color: var(--orange);">Definition</div>
+      <p>A <strong>coroutine</strong> is a function that can pause itself mid-execution and hand control back to the caller, then be resumed later from where it left off. Normal functions run <em>sequentially</em> — one must finish before the next begins. Coroutines run <em>concurrently</em> — multiple can be in-progress at the same time, each pausing and resuming in turn. They're called <em>coroutines</em> because they cooperate with each other to make progress together rather than waiting in line.</p>
+    </div>
+
+    <div class="two-col">
+      <div>
+        <div class="col-label bad">Sequential,~6s</div>
+<pre><span class="kw">async def</span> <span class="fn">main</span>():
+    a = <span class="kw">await</span> <span class="fn">text_kurt</span>()
+    b = <span class="kw">await</span> <span class="fn">text_christian</span>()
+    c = <span class="kw">await</span> <span class="fn">text_trump</span>()
+    <span class="kw">return</span> [a, b, c]</pre>
+      </div>
+      <div>
+        <div class="col-label good">Concurrent,~2s</div>
+<pre><span class="kw">async def</span> <span class="fn">main</span>():
+    a, b, c = <span class="kw">await</span> asyncio.<span class="fn">gather</span>(
+        <span class="fn">text_kurt</span>(),
+        <span class="fn">text_christian</span>(),
+        <span class="fn">text_trump</span>(),
+    )
+    <span class="kw">return</span> [a, b, c]</pre>
+      </div>
+    </div>
+
+    <div class="callout">
+      <div class="callout-label">The key insight</div>
+      <p>Concurrency is not the same as parallelism. <code>asyncio.gather()</code> doesn't run on multiple CPU cores, it interleaves tasks on a single thread, letting each one run while the others wait. We only have one brain, but we can use it at different times to text different people while we wait for a response from others.</p>
+    </div>
+  </section>
+
+  <!-- ── 03 Async Generators ─────────────────────────────────────────────────── -->
+  <section>
+    <h2><span class="num">03 —</span> Async Generators</h2>
+    <div class="room-tag">Room 3,The Spider's Web</div>
+    <p>An <strong>async generator</strong> combines both ideas. It is an <code>async def</code> function that uses <code>yield</code>. The caller iterates it with <code>async for</code>, and each iteration can itself <code>await</code> something.</p>
+    <p>Imagine you're texting a group of friends one by one, waiting for each reply before moving on. You could collect every reply first and respond to all of them at the end, but by then the conversation is stale, your notifications are piling up, and you end up with no friends. You want to respond the moment you realize you have a reply, then move on to the next person.</p>
+
+    <div class="two-col">
+      <div>
+        <div class="col-label bad">Waits for all</div>
+<pre><span class="kw">async def</span> <span class="fn">check_in</span>(people):
+    all_replies = []
+    <span class="kw">while</span> people:
+        person = people.<span class="fn">pop</span>(<span class="num-lit">0</span>)
+        reply = <span class="kw">await</span> <span class="fn">text</span>(person)
+        all_replies.<span class="fn">append</span>(reply)
+    <span class="kw">return</span> all_replies
+
+<span class="cmt"># caller reads all at the end</span>
+replies = <span class="kw">await</span> <span class="fn">check_in</span>(friends)
+<span class="kw">for</span> reply <span class="kw">in</span> replies:
+    <span class="fn">respond</span>(reply)</pre>
+      </div>
+      <div>
+        <div class="col-label good">Yields immediately</div>
+<pre><span class="kw">async def</span> <span class="fn">check_in</span>(people):
+    <span class="kw">while</span> people:
+        person = people.<span class="fn">pop</span>(<span class="num-lit">0</span>)
+        reply = <span class="kw">await</span> <span class="fn">text</span>(person)
+        <span class="kw">yield</span> reply
+
+<span class="cmt"># caller responds as each reply arrives</span>
+<span class="kw">async for</span> reply <span class="kw">in</span> <span class="fn">check_in</span>(friends):
+    <span class="fn">respond</span>(reply)</pre>
+      </div>
+    </div>
+
+    <div class="callout">
+      <div class="callout-label">The key insight</div>
+      <p>The bad version uses <code>async</code> to fire off requests concurrently. But then it collects everything into a list and hands it all back at once, so it's mierda. If you need to <em>do something</em> with each response, gathering doesn't help you.  You still have to wait for everyone before you can act. An async generator lets you act the moment each result is ready, then keep going. <code>yield</code> the instant you have something; don't make the caller wait for the whole pile.</p>
+    </div>
+  </section>
+
+  <!-- ── 04 Twisted ─────────────────────────────────────────────────────────── -->
+  <section>
+    <h2><span class="num">04 —</span> Twisted &amp; DeferredQueue</h2>
+    <div class="room-tag">Room 4,The Final Lock</div>
+    <p>Scrapy's core runs on <strong>Twisted</strong>, an older async framework that predates Python's built-in async support. Modern versions of Scrapy can bridge to <code>asyncio</code> as well, but Twisted is still the engine underneath. The concepts are the same, but the vocabulary is different.</p>
+    <p>In Twisted, a <strong>Deferred</strong> is the equivalent of an <code>awaitable</code>,an object representing a value that isn't ready yet. You use <code>@inlineCallbacks</code> to write Twisted async code that looks like normal Python, with <code>yield</code> in place of <code>await</code>.</p>
+    <p>A <strong>DeferredQueue</strong> is Twisted's producer/consumer queue. A spider puts requests in; workers pull them out. Each <code>queue.get()</code> returns a Deferred that fires when an item is available.</p>
+
+<pre><span class="kw">from</span> twisted.internet.defer <span class="kw">import</span> (
+    DeferredQueue, inlineCallbacks, gatherResults
+)
+
+<span class="kw">@</span><span class="fn">inlineCallbacks</span>
+<span class="kw">def</span> <span class="fn">worker</span>(queue, results):
+    request = <span class="kw">yield</span> queue.<span class="fn">get</span>()      <span class="cmt"># wait for an item</span>
+    result  = <span class="kw">yield</span> <span class="fn">fetch</span>(request)    <span class="cmt"># wait for the fetch</span>
+    results.<span class="fn">append</span>(result)
+
+<span class="kw">@</span><span class="fn">inlineCallbacks</span>
+<span class="kw">def</span> <span class="fn">run_engine</span>(spider):
+    queue = <span class="cls">DeferredQueue</span>()
+    <span class="kw">for</span> req <span class="kw">in</span> spider.<span class="fn">start_requests</span>():
+        queue.<span class="fn">put</span>(req)
+
+    results = []
+    <span class="cmt"># spawn all workers at once,Twisted's gather()</span>
+    workers = [<span class="fn">worker</span>(queue, results) <span class="kw">for</span> _ <span class="kw">in</span> <span class="fn">range</span>(<span class="num-lit">5</span>)]
+    <span class="kw">yield</span> <span class="fn">gatherResults</span>(workers)
+    <span class="kw">return</span> results</pre>
+
+    <div class="callout">
+      <div class="callout-label">Under Scrapy's hood</div>
+      <p>Every Scrapy spider ever written has run on top of this. <code>start_requests()</code> populates a <code>DeferredQueue</code>. Scrapy's downloader is a pool of workers draining that queue concurrently. <code>gatherResults()</code> is how it waits for all of them,the same idea as <code>asyncio.gather()</code>, different framework.
+      Twisted can do more complicated shit, but it's not as important to know.  Use the hint to get out of this one.</p>
+    </div>
+  </section>
+
+
+  <!-- ── 06 CTA ────────────────────────────────────────────────────────────── -->
+  <section style="text-align:center; padding: 20px 0 8px;">
+    <a class="cta-btn" href="">
+      Apply what you've learned, see if you can escape
+      <span class="cta-arrow">→</span>
+    </a>
+  </section>
+
+  </main>
+
+  <footer class="footer">
+    <span>PYTHON ASSIGNMENT</span>
+    <span><span class="dot"></span>Async &amp; Generators<span class="dot"></span></span>
+    <span>Escape Room</span>
+  </footer>
+
+</div>
+</body>
+</html>

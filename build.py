@@ -29,7 +29,25 @@ args.append("app.py")
 
 subprocess.run(args, check=True)
 
-print()
-print("✓ Done!")
-print(f"  Your app is at: {dist_path}")
-print(f"  {tip}")
+if sys.platform == "darwin":
+    # Ad-hoc sign so Gatekeeper doesn't block it
+    subprocess.run(
+        ["codesign", "--force", "--deep", "--sign", "-", dist_path],
+        check=True,
+    )
+    # Use ditto instead of zip — preserves symlinks and macOS metadata
+    zip_path = "dist/PythonEscapeRoom.zip"
+    subprocess.run(
+        ["ditto", "-c", "-k", "--sequesterRsrc", "--keepParent", dist_path, zip_path],
+        check=True,
+    )
+    print()
+    print("✓ Done!")
+    print(f"  App:    {dist_path}")
+    print(f"  Zip:    {zip_path}  ← upload this to S3")
+    print(f"  {tip}")
+else:
+    print()
+    print("✓ Done!")
+    print(f"  Your app is at: {dist_path}")
+    print(f"  {tip}")

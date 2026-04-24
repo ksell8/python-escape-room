@@ -17,7 +17,9 @@ uv sync
 uv run app.py
 ```
 
-## Build the macOS app
+## Build the macOS app 
+
+#### Claude added the other major OSes, but was too lazy to test :shrug: :shamrock:
 
 ```bash
 uv run build.py

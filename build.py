@@ -44,7 +44,7 @@ if sys.platform == "darwin":
     print()
     print("✓ Done!")
     print(f"  App:    {dist_path}")
-    print(f"  Zip:    {zip_path}  ← upload this to S3")
+    print(f"  Zip:    {zip_path}")
     print(f"  {tip}")
 else:
     print()
